@@ -10,6 +10,14 @@ __all__ = ()
 class ParseError(Exception):
     pass
 
+class ref(object):
+
+    def define(self, p):
+        self.p = p
+
+    def __call__(self, text):
+        return self.p(text)
+
 def char(s):
     def parser(text):
         if text[:len(s)] != s:
@@ -88,12 +96,17 @@ def parse(p, text, suppress_error=False):
     return result
 
 if __name__ == "__main__":
-    op = choice(char('+'), char('-'))
     id = choice(char('a'), char('b'))
-    expr = choice(sequence(id, op, id), id)
+    op = choice(char('+'), char('-'))
+    expr = ref()
+    val = choice(id, sequence(char('('), expr, char(')')))
+    bin = sequence(val, zero_or_more(sequence(op, val)))
+    expr.define(bin)
     start = expr
 
-    print parse(start, 'a+b', suppress_error=True)
-    print parse(start, 'a+', suppress_error=True)
     print parse(start, 'a', suppress_error=True)
-    print parse(start, '', suppress_error=True)
+    print parse(start, 'a+b', suppress_error=True)
+    print parse(start, '(a+b)', suppress_error=True)
+    print parse(start, 'a+(a+b)', suppress_error=True)
+    print parse(start, 'a+(a+(a+b))', suppress_error=True)
+    print parse(start, 'a+(a+(a+b))+a', suppress_error=True)
