@@ -5,89 +5,127 @@
 
 """
 
+import re
+
 __all__ = ()
 
 class ParseError(Exception):
     pass
 
-class ref(object):
+class Parser(object):
+
+    def __call__(self, string):
+        raise NotImplementedError()
+
+    def __or__(self, p):
+        return Choice(self, p)
+
+class Repetition(Parser):
+
+    def __init__(self, p):
+        self.p = p
+
+    def __call__(self, string):
+        result = []
+        while True:
+            try:
+                r, string = self.p(string)
+                result.append(r)
+            except ParseError:
+                return result, string
+
+class Sequence(Parser):
+
+    def __init__(self, *ps):
+        self.ps = ps
+
+    def __call__(self, string):
+        result = []
+        for p in self.ps:
+            r, string = p(string)
+            result.append(r)
+        return result, string
+
+class Optional(Parser):
+
+    def __init__(self, p):
+        self.p = p
+
+    def __call__(self, string):
+        try:
+            result, string = self.p(string)
+        except ParseError:
+            return None, string
+        else:
+            return result, string
+
+class Choice(Parser):
+
+    def __init__(self, *ps):
+        self.ps = ps
+
+    def __call__(self, string):
+        for p in self.ps:
+            try:
+                return p(string)
+            except ParseError:
+                continue
+        raise ParseError()
+
+class NotPredicate(Parser):
+
+    def __init__(self, p):
+        self.p = p
+
+    def __call__(self, string):
+        try:
+            self.p(string)
+        except ParseError:
+            return None, string
+        else:
+            raise ParseError()
+
+class AndPredicate(Parser):
+
+    def __init__(self, p):
+        self.p = p
+
+    def __call__(self, string):
+        self.p(string)
+        return None, string
+
+class Item(Parser):
+
+    def __init__(self, item):
+        self.item = item
+
+    def __call__(self, string):
+        if not string or string[0] != self.item:
+            raise ParseError()
+        return self.item, string[1:]
+
+class Pattern(Parser):
+
+    def __init__(self, pattern):
+        self.pattern = "^(" + (pattern
+            .replace("(", "\\(")
+            .replace(")", "\\)")) + ")"
+
+    def __call__(self, string):
+        pass
+
+class Ref(object):
 
     def define(self, p):
         self.p = p
 
-    def __call__(self, text):
-        return self.p(text)
+    def __call__(self, string):
+        return self.p(string)
 
-def char(s):
-    def parser(text):
-        if text[:len(s)] != s:
-            raise ParseError()
-        return s, text[len(s):]
-    return parser
-
-def zero_or_more(p):
-    def parser(text):
-        result = []
-        while True:
-            try:
-                r, text = p(text)
-                result.append(r)
-            except ParseError:
-                return result, text
-    return parser
-
-def sequence(*ps):
-    def parser(text):
-        result = []
-        for p in ps:
-            r, text = p(text)
-            result.append(r)
-        return result, text
-    return parser
-
-def one_or_more(p):
-    return sequence(p, zero_or_more(p))
-
-def optional(p):
-    def parser(text):
-        try:
-            result, text = p(text)
-        except ParseError:
-            return None, text
-        else:
-            return result, text
-    return parser
-
-def choice(*ps):
-    def parser(text):
-        for p in ps:
-            try:
-                return p(text)
-            except ParseError:
-                continue
-        raise ParseError()
-    return parser
-
-def not_predicate(p):
-    def parser(text):
-        try:
-            p(text)
-        except ParseError:
-            return None, text
-        else:
-            raise ParseError()
-    return parser
-
-def and_predicate(p):
-    def parser(text):
-        p(text)
-        return None, text
-    return parser
-
-def parse(p, text, suppress_error=False):
+def parse(p, string, suppress_error=False):
     try:
-        result, text = p(text)
-        if text:
+        result, string = p(string)
+        if string:
             raise ParseError()
     except ParseError:
         if suppress_error:
@@ -96,11 +134,11 @@ def parse(p, text, suppress_error=False):
     return result
 
 if __name__ == "__main__":
-    id = choice(char('a'), char('b'))
-    op = choice(char('+'), char('-'))
-    expr = ref()
-    val = choice(id, sequence(char('('), expr, char(')')))
-    bin = sequence(val, zero_or_more(sequence(op, val)))
+    id = Item('a') | Item('b')
+    op = Item('+') | Item('-')
+    expr = Ref()
+    val = id | Sequence(Item('('), expr, Item(')'))
+    bin = Sequence(val, Repetition(Sequence(op, val)))
     expr.define(bin)
     start = expr
 
@@ -109,4 +147,5 @@ if __name__ == "__main__":
     print parse(start, '(a+b)', suppress_error=True)
     print parse(start, 'a+(a+b)', suppress_error=True)
     print parse(start, 'a+(a+(a+b))', suppress_error=True)
+    print parse(start, 'a+(a+(a+b))+a', suppress_error=True)
     print parse(start, 'a+(a+(a+b))+a', suppress_error=True)
