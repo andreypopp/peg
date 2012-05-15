@@ -137,15 +137,10 @@ class Ref(object):
     def __call__(self, string):
         return self.p(string)
 
-def parse(p, string, suppress_error=False):
-    try:
-        result, string = p(string)
-        if string:
-            raise ParseError()
-    except ParseError:
-        if suppress_error:
-            return None
-        raise
+def parse(p, string):
+    result, string = p(string)
+    if string:
+        raise ParseError()
     return result
 
 if __name__ == "__main__":
@@ -164,10 +159,10 @@ if __name__ == "__main__":
     expr.define(bin)
     start = expr
 
-    print parse(start, 'a', suppress_error=True)
-    print parse(start, 'a+b', suppress_error=True)
-    print parse(start, '(a+b)', suppress_error=True)
-    print parse(start, 'a+(a+b)', suppress_error=True)
-    print parse(start, 'a+(a+(a+c))', suppress_error=True)
-    print parse(start, 'a+(a+(a+b))+a', suppress_error=True)
-    print parse(start, 'a+(a+(a+d))+a', suppress_error=True)
+    print parse(start, 'a')
+    print parse(start, 'a+b')
+    print parse(start, '(a+b)')
+    print parse(start, 'a+(a+b)')
+    print parse(start, 'a+(a+(a+c))')
+    print parse(start, 'a+(a+(a+b))+a')
+    print parse(start, 'a+(a+(a+d))+a')
