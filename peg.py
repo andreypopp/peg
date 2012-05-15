@@ -153,15 +153,8 @@ ref = Ref
 
 if __name__ == "__main__":
 
-    class Bin(object):
-        def __init__(self, a, op, c):
-            self.a, self.op, self.b = a, op, c
-        def __repr__(self):
-            return "Bin(%s, %s, %s)" % (self.a, self.op, self.b)
-
-    makebin_ = lambda l, ls: reduce(lambda a, (op, b): Bin(a, op, b), ls, l)
-    makebin = lambda (l, ls): l if not ls else makebin_(l, ls)
-
+    makebin_    = lambda l, ls: reduce(lambda a, (op, b): (a, op, b), ls, l)
+    makebin     = lambda (l, ls): l if not ls else makebin_(l, ls)
 
     expr    = ref()
     num     = pat("[0-9]+")                         > int
