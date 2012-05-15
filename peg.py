@@ -10,7 +10,11 @@ import re
 __all__ = ()
 
 class ParseError(Exception):
-    pass
+
+    def __init__(self, p, string):
+        super(ParseError, self).__init__(p, string)
+        self.p = p
+        self.string = string
 
 class Parser(object):
 
@@ -29,7 +33,7 @@ class Parser(object):
     def parse(self, string):
         result, string = self(string)
         if string:
-            raise ParseError()
+            raise ParseError(self, string)
         return result
 
 class Repetition(Parser):
@@ -86,7 +90,7 @@ class Choice(Parser):
                 return r if self.action is None else self.action(r), string
             except ParseError:
                 continue
-        raise ParseError()
+        raise ParseError(self, string)
 
 class NotPredicate(Parser):
 
@@ -99,7 +103,7 @@ class NotPredicate(Parser):
         except ParseError:
             return None, string
         else:
-            raise ParseError()
+            raise ParseError(self, string)
 
 class AndPredicate(Parser):
 
@@ -117,7 +121,7 @@ class Item(Parser):
 
     def __call__(self, string):
         if not string or string[0] != self.item:
-            raise ParseError()
+            raise ParseError(self, string)
         r = self.item if self.action is None else self.action(self.item)
         return r, string[1:]
 
@@ -132,7 +136,7 @@ class Pattern(Parser):
     def __call__(self, string):
         m = self.pattern.match(string)
         if not m:
-            raise ParseError()
+            raise ParseError(self, string)
         item = string[:m.end()]
         r = item if self.action is None else self.action(item)
         return r, string[m.end():]
