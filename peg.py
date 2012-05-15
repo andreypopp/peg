@@ -166,11 +166,28 @@ if __name__ == "__main__":
     sum     = seq(prod, rep(seq(addop, prod)))      > makebin
     expr.define(sum)
 
-    print expr.parse('1')
-    print expr.parse('1+2')
-    print expr.parse('1+2+3')
-    print expr.parse('1*2')
-    print expr.parse('1*2+3')
-    print expr.parse('(1*2)+3')
-    print expr.parse('1*(2+3)')
-    print expr.parse('1*(2+3)-3')
+    def e(x):
+        ops = {
+            "+": int.__add__,
+            "-": int.__sub__,
+            "*": int.__mul__,
+            "/": int.__truediv__,
+            }
+        if isinstance(x, tuple):
+            l, op, r = x
+            return ops[op](e(l), e(r))
+        else:
+            return x
+
+    tests = [
+        '1',
+        '1+2',
+        '1+2+3',
+        '1*2',
+        '1*2+3',
+        '(1*2)+3',
+        '1*(2+3)',
+        '1*(2+3)-3',
+        ]
+    for test in tests:
+        print test, "=", e(expr.parse(test))
