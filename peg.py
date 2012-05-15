@@ -139,6 +139,12 @@ class Ref(object):
     def __call__(self, string):
         return self.p(string)
 
+seq = Sequence
+rep = Repetition
+pat = Pattern
+item = Item
+ref = Ref
+
 def parse(p, string):
     result, string = p(string)
     if string:
@@ -147,32 +153,26 @@ def parse(p, string):
 
 if __name__ == "__main__":
 
-    class Op(object):
-        def __init__(self, name):
-            self.name = name
-        def __repr__(self):
-            return "Op(%s)" % self.name
-
     class Bin(object):
         def __init__(self, a, op, c):
             self.a, self.op, self.b = a, op, c
         def __repr__(self):
             return "Bin(%s, %s, %s)" % (self.a, self.op, self.b)
 
-    expr = Ref()
-    num = Pattern("[0-9]+") > int
-    bexpr = Sequence(Item("("), expr, Item(")")) > (lambda (_a, e, _b): e)
-    val = num | bexpr
-    mulop = Pattern("\*|/")
-    addop = Pattern("\-|\+")
-    prod = Sequence(val, Repetition(Sequence(mulop, val))) > \
-            (lambda (l, ls): l if not ls else reduce(
-                lambda x, (op, y): Bin(x, op, y), ls, l))
-    sum = Sequence(prod, Repetition(Sequence(addop, prod))) > \
-            (lambda (l, ls): l if not ls else reduce(
-                lambda x, (op, y): Bin(x, op, y), ls, l))
+    makebin_ = lambda l, ls: reduce(lambda a, (op, b): Bin(a, op, b), ls, l)
+    makebin = lambda (l, ls): l if not ls else makebin_(l, ls)
+
+
+    expr    = ref()
+    num     = pat("[0-9]+")                         > int
+    bexpr   = seq(item("("), expr, item(")"))       > (lambda (_a, e, _b): e)
+    val     = num | bexpr
+    mulop   = pat("\*|/")
+    addop   = pat("\-|\+")
+    prod    = seq(val, rep(seq(mulop, val)))        > makebin
+    sum     = seq(prod, rep(seq(addop, prod)))      > makebin
     expr.define(sum)
-    start       = expr
+    start   = expr
 
 
     print parse(start, '1')
