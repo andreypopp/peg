@@ -116,12 +116,18 @@ class Item(Parser):
 class Pattern(Parser):
 
     def __init__(self, pattern):
-        self.pattern = "^(" + (pattern
+        pattern = "^(" + (pattern
             .replace("(", "\\(")
             .replace(")", "\\)")) + ")"
+        self.pattern = re.compile(pattern)
 
     def __call__(self, string):
-        pass
+        m = self.pattern.match(string)
+        if not m:
+            raise ParseError()
+        item = string[:m.end()]
+        r = item if self.action is None else self.action(item)
+        return r, string[m.end():]
 
 class Ref(object):
 
@@ -150,8 +156,7 @@ if __name__ == "__main__":
         def __repr__(self):
             return "Id(%s)" % self.name
 
-    id = Item('a') | Item('b') > Id
-    print id.action
+    id = Pattern("[a-zA-Z_][a-zA-Z_0-9]*") > Id
     op = Item('+') | Item('-')
     expr = Ref()
     val = id | Sequence(Item('('), expr, Item(')'))
@@ -163,6 +168,6 @@ if __name__ == "__main__":
     print parse(start, 'a+b', suppress_error=True)
     print parse(start, '(a+b)', suppress_error=True)
     print parse(start, 'a+(a+b)', suppress_error=True)
-    print parse(start, 'a+(a+(a+b))', suppress_error=True)
+    print parse(start, 'a+(a+(a+c))', suppress_error=True)
     print parse(start, 'a+(a+(a+b))+a', suppress_error=True)
-    print parse(start, 'a+(a+(a+b))+a', suppress_error=True)
+    print parse(start, 'a+(a+(a+d))+a', suppress_error=True)
