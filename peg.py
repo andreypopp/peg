@@ -36,9 +36,10 @@ class Repetition(Parser):
         while True:
             try:
                 r, string = self.p(string)
-                result.append(r if self.action is None else self.action(r))
+                result.append(r)
             except ParseError:
-                return result, string
+                return (result if self.action is None else self.action(result),
+                        string)
 
 class Sequence(Parser):
 
@@ -49,8 +50,9 @@ class Sequence(Parser):
         result = []
         for p in self.ps:
             r, string = p(string)
-            result.append(r if self.action is None else self.action(r))
-        return result, string
+            result.append(r)
+        return (tuple(result) if self.action is None else self.action(result),
+                string)
 
 class Optional(Parser):
 
@@ -145,24 +147,39 @@ def parse(p, string):
 
 if __name__ == "__main__":
 
-    class Id(object):
+    class Op(object):
         def __init__(self, name):
             self.name = name
         def __repr__(self):
-            return "Id(%s)" % self.name
+            return "Op(%s)" % self.name
 
-    id = Pattern("[a-zA-Z_][a-zA-Z_0-9]*") > Id
-    op = Item('+') | Item('-')
+    class Bin(object):
+        def __init__(self, a, op, c):
+            self.a, self.op, self.b = a, op, c
+        def __repr__(self):
+            return "Bin(%s, %s, %s)" % (self.a, self.op, self.b)
+
     expr = Ref()
-    val = id | Sequence(Item('('), expr, Item(')'))
-    bin = Sequence(val, Repetition(Sequence(op, val)))
-    expr.define(bin)
-    start = expr
+    num = Pattern("[0-9]+") > int
+    bexpr = Sequence(Item("("), expr, Item(")")) > (lambda (_a, e, _b): e)
+    val = num | bexpr
+    mulop = Pattern("\*|/")
+    addop = Pattern("\-|\+")
+    prod = Sequence(val, Repetition(Sequence(mulop, val))) > \
+            (lambda (l, ls): l if not ls else reduce(
+                lambda x, (op, y): Bin(x, op, y), ls, l))
+    sum = Sequence(prod, Repetition(Sequence(addop, prod))) > \
+            (lambda (l, ls): l if not ls else reduce(
+                lambda x, (op, y): Bin(x, op, y), ls, l))
+    expr.define(sum)
+    start       = expr
 
-    print parse(start, 'a')
-    print parse(start, 'a+b')
-    print parse(start, '(a+b)')
-    print parse(start, 'a+(a+b)')
-    print parse(start, 'a+(a+(a+c))')
-    print parse(start, 'a+(a+(a+b))+a')
-    print parse(start, 'a+(a+(a+d))+a')
+
+    print parse(start, '1')
+    print parse(start, '1+2')
+    print parse(start, '1+2+3')
+    print parse(start, '1*2')
+    print parse(start, '1*2+3')
+    print parse(start, '(1*2)+3')
+    print parse(start, '1*(2+3)')
+    print parse(start, '1*(2+3)-3')
