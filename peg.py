@@ -14,8 +14,14 @@ class ParseError(Exception):
 
 class Parser(object):
 
+    action = None
+
     def __call__(self, string):
         raise NotImplementedError()
+
+    def __gt__(self, action):
+        self.action = action
+        return self
 
     def __or__(self, p):
         return Choice(self, p)
@@ -30,7 +36,7 @@ class Repetition(Parser):
         while True:
             try:
                 r, string = self.p(string)
-                result.append(r)
+                result.append(r if self.action is None else self.action(r))
             except ParseError:
                 return result, string
 
@@ -43,7 +49,7 @@ class Sequence(Parser):
         result = []
         for p in self.ps:
             r, string = p(string)
-            result.append(r)
+            result.append(r if self.action is None else self.action(r))
         return result, string
 
 class Optional(Parser):
@@ -53,7 +59,8 @@ class Optional(Parser):
 
     def __call__(self, string):
         try:
-            result, string = self.p(string)
+            r, string = self.p(string)
+            return r if self.action is None else self.action(r), string
         except ParseError:
             return None, string
         else:
@@ -67,7 +74,8 @@ class Choice(Parser):
     def __call__(self, string):
         for p in self.ps:
             try:
-                return p(string)
+                r, string = p(string)
+                return r if self.action is None else self.action(r), string
             except ParseError:
                 continue
         raise ParseError()
@@ -102,7 +110,8 @@ class Item(Parser):
     def __call__(self, string):
         if not string or string[0] != self.item:
             raise ParseError()
-        return self.item, string[1:]
+        r = self.item if self.action is None else self.action(self.item)
+        return r, string[1:]
 
 class Pattern(Parser):
 
@@ -134,7 +143,15 @@ def parse(p, string, suppress_error=False):
     return result
 
 if __name__ == "__main__":
-    id = Item('a') | Item('b')
+
+    class Id(object):
+        def __init__(self, name):
+            self.name = name
+        def __repr__(self):
+            return "Id(%s)" % self.name
+
+    id = Item('a') | Item('b') > Id
+    print id.action
     op = Item('+') | Item('-')
     expr = Ref()
     val = id | Sequence(Item('('), expr, Item(')'))
