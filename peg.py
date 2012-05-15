@@ -26,6 +26,12 @@ class Parser(object):
     def __or__(self, p):
         return Choice(self, p)
 
+    def parse(self, string):
+        result, string = self(string)
+        if string:
+            raise ParseError()
+        return result
+
 class Repetition(Parser):
 
     def __init__(self, p):
@@ -131,7 +137,7 @@ class Pattern(Parser):
         r = item if self.action is None else self.action(item)
         return r, string[m.end():]
 
-class Ref(object):
+class Ref(Parser):
 
     def define(self, p):
         self.p = p
@@ -144,12 +150,6 @@ rep = Repetition
 pat = Pattern
 item = Item
 ref = Ref
-
-def parse(p, string):
-    result, string = p(string)
-    if string:
-        raise ParseError()
-    return result
 
 if __name__ == "__main__":
 
@@ -172,14 +172,12 @@ if __name__ == "__main__":
     prod    = seq(val, rep(seq(mulop, val)))        > makebin
     sum     = seq(prod, rep(seq(addop, prod)))      > makebin
     expr.define(sum)
-    start   = expr
 
-
-    print parse(start, '1')
-    print parse(start, '1+2')
-    print parse(start, '1+2+3')
-    print parse(start, '1*2')
-    print parse(start, '1*2+3')
-    print parse(start, '(1*2)+3')
-    print parse(start, '1*(2+3)')
-    print parse(start, '1*(2+3)-3')
+    print expr.parse('1')
+    print expr.parse('1+2')
+    print expr.parse('1+2+3')
+    print expr.parse('1*2')
+    print expr.parse('1*2+3')
+    print expr.parse('(1*2)+3')
+    print expr.parse('1*(2+3)')
+    print expr.parse('1*(2+3)-3')
