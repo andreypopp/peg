@@ -155,6 +155,9 @@ pat = Pattern
 item = Item
 ref = Ref
 
+def oneof(chars):
+    return Pattern("[" + re.escape(chars) + "]")
+
 if __name__ == "__main__":
 
     makebin_    = lambda l, ls: reduce(lambda a, (op, b): (a, op, b), ls, l)
@@ -164,8 +167,8 @@ if __name__ == "__main__":
     num     = pat("[0-9]+")                         > int
     bexpr   = seq(item("("), expr, item(")"))       > (lambda (_a, e, _b): e)
     val     = num | bexpr
-    mulop   = pat("\*|/")
-    addop   = pat("\-|\+")
+    mulop   = oneof("*/")
+    addop   = oneof("+-")
     prod    = seq(val, rep(seq(mulop, val)))        > makebin
     sum     = seq(prod, rep(seq(addop, prod)))      > makebin
     expr.define(sum)
