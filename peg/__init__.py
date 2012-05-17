@@ -5,9 +5,7 @@
 
 """
 
-import re
-
-__all__ = ("seq", "item", "pat", "rep", "oneof", "ref", "opt")
+__all__ = ("seq", "item", "rep", "ref", "opt", "bracketed", "binop")
 
 class ParseError(Exception):
 
@@ -132,27 +130,6 @@ class Item(Parser):
         r = self.item if self.action is None else self.action(self.item)
         return r, string[1:]
 
-class Pattern(Parser):
-
-    def __init__(self, pattern):
-        pattern = "^(" + (pattern
-            .replace("(", "\\(")
-            .replace(")", "\\)")) + ")"
-        self.pattern = re.compile(pattern)
-
-    def __call__(self, string):
-        m = self.pattern.match(string)
-        if not m:
-            raise ParseError(self, string)
-        item = string[:m.end()]
-        r = item if self.action is None else self.action(item)
-        return r, string[m.end():]
-
-    def __str__(self):
-        return "<Pattern '%s'>" % self.pattern.pattern
-
-    __repr__ = __str__
-
 class Ref(Parser):
 
     def define(self, p):
@@ -163,10 +140,17 @@ class Ref(Parser):
 
 seq = Sequence
 rep = Repetition
-pat = Pattern
 item = Item
 ref = Ref
 opt = Optional
 
-def oneof(chars):
-    return Pattern("[" + re.escape(chars) + "]")
+def bracketed(l, p, r):
+    """ Parser for bracketed expressions"""
+    return seq(l, p, r) > (lambda (_l, p, _r): p)
+
+def binop(arg, op):
+    """ Parser for binary operations"""
+    makebin = lambda (arg, ops): (
+        arg if not ops
+        else reduce(lambda a, (op, b): (a, op, b), ops, arg))
+    return seq(arg, rep(seq(wspaced(op), arg))) > makebin

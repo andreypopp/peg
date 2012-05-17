@@ -10,7 +10,7 @@ setup(
     author="Andrey Popp",
     author_email="8mayday@gmail.com",
     license="BSD",
-    py_modules=["peg"],
+    packages=["peg"],
     include_package_data=True,
     zip_safe=False,
     install_requires=[],

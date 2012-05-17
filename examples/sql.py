@@ -1,4 +1,5 @@
 from peg import *
+from peg.text import *
 from collections import namedtuple
 
 Select          = namedtuple("Select",

@@ -1,4 +1,5 @@
-from peg import ref, pat, oneof, seq, rep, item
+from peg import *
+from peg.text import *
 
 makebin_    = lambda l, ls: reduce(lambda a, (op, b): (a, op, b), ls, l)
 makebin     = lambda (l, ls): l if not ls else makebin_(l, ls)
