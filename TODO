@@ -1,0 +1,14 @@
+
+  * compilation into Python code
+
+    AST -> source -> bytecode
+
+    aggressive inlining, what to do with semantic actions?
+
+  * packrat parsing algorithm
+
+  * left-recusrion identification
+
+  * automatic (?) left-recusrion elimination
+
+    what to do with semantic actions?
