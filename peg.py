@@ -7,7 +7,7 @@
 
 import re
 
-__all__ = ()
+__all__ = ("seq", "item", "pat", "rep", "oneof", "ref", "opt")
 
 class ParseError(Exception):
 
@@ -24,7 +24,14 @@ class Parser(object):
         raise NotImplementedError()
 
     def __gt__(self, action):
-        self.action = action
+        return self.set_action(action)
+
+    def set_action(self, action):
+        if self.action is not None:
+            oldaction = self.action
+            self.action = lambda *a, **kw: action(oldaction(*a, **kw))
+        else:
+            self.action = action
         return self
 
     def __or__(self, p):
@@ -141,6 +148,11 @@ class Pattern(Parser):
         r = item if self.action is None else self.action(item)
         return r, string[m.end():]
 
+    def __str__(self):
+        return "<Pattern '%s'>" % self.pattern.pattern
+
+    __repr__ = __str__
+
 class Ref(Parser):
 
     def define(self, p):
@@ -154,6 +166,7 @@ rep = Repetition
 pat = Pattern
 item = Item
 ref = Ref
+opt = Optional
 
 def oneof(chars):
     return Pattern("[" + re.escape(chars) + "]")
