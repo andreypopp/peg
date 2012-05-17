@@ -5,7 +5,9 @@
 
 """
 
-__all__ = ("seq", "item", "rep", "ref", "opt", "bracketed", "binop")
+__all__ = (
+    "seq", "item", "rep", "ref", "opt", "bracketed", "binop",
+    "separated")
 
 class ParseError(Exception):
 
@@ -154,3 +156,6 @@ def binop(arg, op):
         arg if not ops
         else reduce(lambda a, (op, b): (a, op, b), ops, arg))
     return seq(arg, rep(seq(op, arg))) > makebin
+
+def separated(p, sep):
+    return seq(p, rep(seq(sep, p))) > (lambda (x, xs): [x] + [y for x, y in xs])

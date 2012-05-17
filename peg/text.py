@@ -9,7 +9,9 @@ import re
 
 from peg import Parser, ParseError
 
-__all__ = ("pat", "oneof", "word", "ws", "ows")
+__all__ = (
+    "pat", "oneof", "word", "ws", "ows", "id", "integer",
+    "positive_integer", "negative_integer")
 
 class Pattern(Parser):
 
@@ -41,5 +43,9 @@ def oneof(chars):
 def word(chars):
     return Pattern(re.escape(chars))
 
-ws = pat("\s+")
-ows = pat("\s*")
+ws                  = pat("\s+")
+ows                 = pat("\s*")
+id                  = pat("[a-zA-Z_][a-zA-Z0-9_]*")
+positive_integer    = pat("\+?[0-9]+")                  > int
+negative_integer    = pat("\-[0-9]+")                   > int
+integer             = pat("[\-\+]*[0-9]+")              > int

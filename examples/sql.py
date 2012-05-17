@@ -24,25 +24,18 @@ class Ref(_Ref):
 
 cbracketed      = bracketed(item('('), item(')'))
 wspaced         = bracketed(ws, ws)
+owspaced        = bracketed(ows, ows)
 o               = lambda p: opt(seq(ws, p))     > (lambda (_ws, p): p)
-sep             = lambda p, s: seq(
-    p,
-    rep(seq(s, p))                              > (lambda ls: [y for x, y in ls])
-    )                                           > (lambda (l, ls): [l] + ls)
-wsep            = lambda p, s: seq(
-    p,
-    rep(seq(ows, s, ows, p))                    > (lambda ls: [y for _, x, _, y in ls])
-    )                                           > (lambda (l, ls): [l] + ls)
+wseparated      = lambda p, sep: separated(p, owspaced(sep))
+
 comma           = item(',')
 dot             = item('.')
 star            = item('*')                     > (lambda x: AllColumns())
-id              = pat("[a-zA-Z_]+")
-num             = pat("[0-9]+")                 > int
 null            = pat("null")                   > (lambda x: Null())
-literal         = num | null
+literal         = integer | null
 
-idref           = sep(id, dot)                   > Ref
-id_list         = wsep(id, comma)                > (lambda ids: map(Ref, ids))
+idref           = separated(id, dot)                   > Ref
+id_list         = wseparated(id, comma)                > (lambda ids: map(Ref, ids))
 
 expr            = ref()
 expr0           = idref | literal | cbracketed(expr)
@@ -57,19 +50,19 @@ expr8           = binop(expr7, wspaced(pat("or")))
 expr.define(expr8)
 
 where_clause    = seq(pat("where"), ws, expr)                   > (lambda (_kw, _ws, c): Where(c))
-offset_clause   = seq(pat("offset"), ws, num)                   > (lambda (_kw, _ws, n): Offset(n))
-limit_clause   = seq(pat("limit"), ws, num)                     > (lambda (_kw, _ws, n): Limit(n))
+offset_clause   = seq(pat("offset"), ws, integer)                   > (lambda (_kw, _ws, n): Offset(n))
+limit_clause   = seq(pat("limit"), ws, integer)                     > (lambda (_kw, _ws, n): Limit(n))
 
 select_elem     = star | idref
-select_list     = wsep(select_elem, comma)
+select_list     = wseparated(select_elem, comma)
 
 join_cond_using = seq(pat("using"), ows, cbracketed(id_list))    > (lambda (_kw, _ws, r): UsingJoinCond(r))
 join_cond_on    = seq(pat("on"), ws, expr)                      > (lambda (_kw, _ws, c): OnJoinCond(c))
 join_cond       = join_cond_using | join_cond_on
 join_clause     = seq(pat("join"), ws, idref, ws, join_cond)    > (lambda (_kw, _ws, t, _ws2, cond):Join(t, cond))
-join_list       = sep(join_clause, ws)
+join_list       = separated(join_clause, ws)
 
-from_list       = sep(idref, comma)
+from_list       = separated(idref, comma)
 from_clause     = seq(pat("from"), ws, from_list, o(join_list)) > (lambda (_kw, _ws, t, j): From(t, j))
 
 select_stmt     = seq(
@@ -99,7 +92,7 @@ tests = [
     'select a from a join b on a.c = b.d where a.c = 2',
     'select a from a limit 10',
     'select a from a offset 10',
-    'select a from a offset 10 limit 20',
+    'select a from a offset -10 limit 20',
     ]
 
 for test in tests:
