@@ -31,7 +31,7 @@ wseparated      = lambda p, sep: separated(p, owspaced(sep))
 comma           = item(',')
 dot             = item('.')
 star            = item('*')                     > (lambda x: AllColumns())
-null            = pat("null")                   > (lambda x: Null())
+null            = word("null")                   > (lambda x: Null())
 literal         = integer | null
 
 idref           = separated(id, dot)                   > Ref
@@ -49,24 +49,24 @@ expr7           = binop(expr6, wspaced(pat("and")))
 expr8           = binop(expr7, wspaced(pat("or")))
 expr.define(expr8)
 
-where_clause    = seq(pat("where"), ws, expr)                   > (lambda (_kw, _ws, c): Where(c))
-offset_clause   = seq(pat("offset"), ws, integer)                   > (lambda (_kw, _ws, n): Offset(n))
-limit_clause   = seq(pat("limit"), ws, integer)                     > (lambda (_kw, _ws, n): Limit(n))
+where_clause    = seq(word("where"), ws, expr)                   > (lambda (_kw, _ws, c): Where(c))
+offset_clause   = seq(word("offset"), ws, integer)                   > (lambda (_kw, _ws, n): Offset(n))
+limit_clause   = seq(word("limit"), ws, integer)                     > (lambda (_kw, _ws, n): Limit(n))
 
 select_elem     = star | idref
 select_list     = wseparated(select_elem, comma)
 
-join_cond_using = seq(pat("using"), ows, cbracketed(id_list))    > (lambda (_kw, _ws, r): UsingJoinCond(r))
-join_cond_on    = seq(pat("on"), ws, expr)                      > (lambda (_kw, _ws, c): OnJoinCond(c))
+join_cond_using = seq(word("using"), ows, cbracketed(id_list))    > (lambda (_kw, _ws, r): UsingJoinCond(r))
+join_cond_on    = seq(word("on"), ws, expr)                      > (lambda (_kw, _ws, c): OnJoinCond(c))
 join_cond       = join_cond_using | join_cond_on
-join_clause     = seq(pat("join"), ws, idref, ws, join_cond)    > (lambda (_kw, _ws, t, _ws2, cond):Join(t, cond))
+join_clause     = seq(word("join"), ws, idref, ws, join_cond)    > (lambda (_kw, _ws, t, _ws2, cond):Join(t, cond))
 join_list       = separated(join_clause, ws)
 
 from_list       = separated(idref, comma)
-from_clause     = seq(pat("from"), ws, from_list, o(join_list)) > (lambda (_kw, _ws, t, j): From(t, j))
+from_clause     = seq(word("from"), ws, from_list, o(join_list)) > (lambda (_kw, _ws, t, j): From(t, j))
 
 select_stmt     = seq(
-    pat("select"), ws,
+    word("select"), ws,
     select_list,
     o(
         seq(from_clause,
