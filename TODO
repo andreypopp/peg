@@ -1,4 +1,6 @@
 
+  * position tracking (wrap stream into tracking iterator)
+
   * compilation into Python code
 
     AST -> source -> bytecode
@@ -12,3 +14,9 @@
   * automatic (?) left-recusrion elimination
 
     what to do with semantic actions?
+
+  * error recovery
+
+    * insert error nodes instead of raising errors
+
+    * provide best uncomplited match
