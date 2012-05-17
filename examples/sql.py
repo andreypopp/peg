@@ -79,22 +79,23 @@ select_stmt     = seq(
 
 stmt            = select_stmt
 
-tests = [
-    'select a',
-    'select  a',
-    'select a,v',
-    'select *',
-    'select *,a.b.c',
-    'select a from a',
-    'select a from a join b using(a, b) join c on d and c and (f or e)',
-    'select a from a join b on 1 > a and 2 = c',
-    'select a from a where a.c = 2',
-    'select a from a join b on a.c = b.d where a.c = 2',
-    'select a from a limit 10',
-    'select a from a offset 10',
-    'select a from a offset -10 limit 20',
-    ]
+if __name__ == "__main__":
+    tests = [
+        'select a',
+        'select  a',
+        'select a,v',
+        'select *',
+        'select *,a.b.c',
+        'select a from a',
+        'select a from a join b using(a, b) join c on d and c and (f or e)',
+        'select a from a join b on 1 > a and 2 = c',
+        'select a from a where a.c = 2',
+        'select a from a join b on a.c = b.d where a.c = 2',
+        'select a from a limit 10',
+        'select a from a offset 10',
+        'select a from a offset -10 limit 20',
+        ]
 
-for test in tests:
-    print test
-    print stmt.parse(test)
+    for test in tests:
+        print test
+        print stmt.parse(test)
