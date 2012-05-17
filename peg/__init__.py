@@ -144,13 +144,13 @@ item = Item
 ref = Ref
 opt = Optional
 
-def bracketed(l, p, r):
+def bracketed(l, r):
     """ Parser for bracketed expressions"""
-    return seq(l, p, r) > (lambda (_l, p, _r): p)
+    return lambda p: seq(l, p, r) > (lambda (_l, p, _r): p)
 
 def binop(arg, op):
     """ Parser for binary operations"""
     makebin = lambda (arg, ops): (
         arg if not ops
         else reduce(lambda a, (op, b): (a, op, b), ops, arg))
-    return seq(arg, rep(seq(wspaced(op), arg))) > makebin
+    return seq(arg, rep(seq(op, arg))) > makebin

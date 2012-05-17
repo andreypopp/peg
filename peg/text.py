@@ -9,7 +9,7 @@ import re
 
 from peg import Parser, ParseError
 
-__all__ = ("pat", "oneof", "word")
+__all__ = ("pat", "oneof", "word", "ws", "ows")
 
 class Pattern(Parser):
 
@@ -40,3 +40,6 @@ def oneof(chars):
 
 def word(chars):
     return Pattern(re.escape(chars))
+
+ws = pat("\s+")
+ows = pat("\s*")

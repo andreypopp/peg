@@ -22,12 +22,8 @@ class Ref(_Ref):
 
     __repr__ = __str__
 
-ws              = pat("\s+")
-ows             = pat("\s*")
-
-gbracketed       = lambda l, r: lambda p: seq(l, p, r)      > (lambda (_l, r, _r): r)
-bracketed       = gbracketed(item('('), item(')'))
-wspaced         = gbracketed(ws, ws)
+cbracketed      = bracketed(item('('), item(')'))
+wspaced         = bracketed(ws, ws)
 o               = lambda p: opt(seq(ws, p))     > (lambda (_ws, p): p)
 sep             = lambda p, s: seq(
     p,
@@ -48,20 +44,16 @@ literal         = num | null
 idref           = sep(id, dot)                   > Ref
 id_list         = wsep(id, comma)                > (lambda ids: map(Ref, ids))
 
-makebin_        = lambda l, ls: reduce(lambda a, (op, b): BinOp(a, op, b), ls, l)
-makebin         = lambda (l, ls): l if not ls else makebin_(l, ls)
-gbinop          = lambda arg, op: seq(arg, rep(seq(wspaced(op), arg)))      > makebin
-
 expr            = ref()
-expr0           = idref | literal | bracketed(expr)
-expr1           = gbinop(expr0, oneof("*/%"))
-expr2           = gbinop(expr1, oneof("+-"))
-expr3           = gbinop(expr2, pat("is"))
-expr4           = gbinop(expr3, pat("like") | pat("ilike"))
-expr5           = gbinop(expr4, oneof("<>"))
-expr6           = gbinop(expr5, item("="))
-expr7           = gbinop(expr6, pat("and"))
-expr8           = gbinop(expr7, pat("or"))
+expr0           = idref | literal | cbracketed(expr)
+expr1           = binop(expr0, wspaced(oneof("*/%")))
+expr2           = binop(expr1, wspaced(oneof("+-")))
+expr3           = binop(expr2, wspaced(pat("is")))
+expr4           = binop(expr3, wspaced(pat("like") | pat("ilike")))
+expr5           = binop(expr4, wspaced(oneof("<>")))
+expr6           = binop(expr5, wspaced(item("=")))
+expr7           = binop(expr6, wspaced(pat("and")))
+expr8           = binop(expr7, wspaced(pat("or")))
 expr.define(expr8)
 
 where_clause    = seq(pat("where"), ws, expr)                   > (lambda (_kw, _ws, c): Where(c))
@@ -71,7 +63,7 @@ limit_clause   = seq(pat("limit"), ws, num)                     > (lambda (_kw, 
 select_elem     = star | idref
 select_list     = wsep(select_elem, comma)
 
-join_cond_using = seq(pat("using"), ows, bracketed(id_list))    > (lambda (_kw, _ws, r): UsingJoinCond(r))
+join_cond_using = seq(pat("using"), ows, cbracketed(id_list))    > (lambda (_kw, _ws, r): UsingJoinCond(r))
 join_cond_on    = seq(pat("on"), ws, expr)                      > (lambda (_kw, _ws, c): OnJoinCond(c))
 join_cond       = join_cond_using | join_cond_on
 join_clause     = seq(pat("join"), ws, idref, ws, join_cond)    > (lambda (_kw, _ws, t, _ws2, cond):Join(t, cond))
